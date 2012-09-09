@@ -1,9 +1,13 @@
-application: helloworld
-version: 1
+application: pinboard-bainco
+version: 2
 runtime: python27
 api_version: 1
 threadsafe: true
 
 handlers:
 - url: /.*
-  script: helloworld.app
+  script: main.app
+  
+libraries:
+- name: jinja2
+  version: latest

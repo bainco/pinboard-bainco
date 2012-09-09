@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block body %}
+	{% if imgUrl %}
+		You just entered:
+		<ul>			
+ 			<li>imageUrl = {{ imgUrl }}</li>
+  			<li>caption = {{ caption }}</li>
+		</ul>
+	{% endif %}
+   Enter new pin:<br>
+   <br>
+    <form method="get">
+      Image URL:<input type="text" name="imgUrl"/><br>
+      Caption:<input type="text" name="caption"/><br>     
+ 	  <input type="submit" value="Submit">
+    </form>
+{% endblock %}
