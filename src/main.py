@@ -1,5 +1,5 @@
 #Author: Connor P. Bain
-#HW 2
+#HW 3
 #Added jinja2 templates as well as simple pinning ability.
 #Last modified September 7, 2012
 
@@ -16,7 +16,7 @@ class MainPage(webapp2.RequestHandler):
         caption = self.request.get('caption')
                 
         template_values = {
-            'title': 'Homework 2',
+            'title': 'Pinboard',
             'imgUrl': imgUrl,
             'caption': caption
             }

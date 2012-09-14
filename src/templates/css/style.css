@@ -1,0 +1,48 @@
+@CHARSET "UTF-8";
+#banner {
+	Height: 40px;
+	Width:100%;
+	Background: #A8001C;
+	position: absolute; 
+    top: 0; 
+    left: 0;
+}
+
+#banner-content {
+	padding: 10px 25px;
+	color:#FFFAE6;
+	Font-size:18px;
+	Text-align: right;
+}
+
+#main {
+	font-family: sans-serif;
+	padding-left: 10px;
+	padding-top: 20px;
+}
+
+#pinbox {
+	font-family: serif;
+	width: 275px;
+	padding: 10px;
+	margin: 0 auto;
+	Background: #CEAE9C;
+	position: relative; 
+    top: 0; 
+    left: 0;
+}
+
+#footer {
+	position:absolute; 
+	bottom:0;
+	left:0; 
+	width:100%; 
+	height:30px;
+	background: #663300;
+}
+
+#footer-content {
+	color: #FFFAE6;
+	padding-top: 5px;
+	text-align: center;
+}

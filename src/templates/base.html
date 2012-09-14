@@ -2,12 +2,27 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<link type="text/css" rel="stylesheet" href="/css/style.css" />
 		<title>{{ title }}</title>
 	</head>
-	<body>
-		<h1>{{ title }}</h1>
-		{% block body %}
-    	{% endblock %}
+	<body bgcolor="#FFFAE6">
+		<div id="banner">
+			<div id="banner-content">
+				Testing - {% if user %}Logout{% else %}Login{% endif %}
+			</div>
+		</div>
+		<div id="main">
+			<h1>{{ title }}</h1>
+			<div id="pinbox">
+				{% block body %}
+    			{% endblock %}
+    		</div>
+    	</div>
+    	<div id="footer">
+			<div id="footer-content">
+				Designed by Connor Bain
+			</div>
+		</div>
 	</body>
 </html>
 
