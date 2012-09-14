@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block body %}
+	{% if user %}
 	{% if imgUrl %}
 		You just entered:
 		<ul>			
@@ -13,4 +14,7 @@
       Caption:<input type="text" name="caption"/><br>     
  	  <input type="submit" value="Submit">
     </form>
+    {% else %}
+    You must login first.
+    {% endif %}
 {% endblock %}

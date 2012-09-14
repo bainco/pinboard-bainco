@@ -1,4 +1,9 @@
 @CHARSET "UTF-8";
+
+a {
+	color:#FFFAE6
+}
+
 #banner {
 	Height: 40px;
 	Width:100%;
@@ -19,17 +24,19 @@
 	font-family: sans-serif;
 	padding-left: 10px;
 	padding-top: 20px;
+	text-align: center;
+}
+
+#title {
+	text-align:left;
 }
 
 #pinbox {
+	display: inline-block;
+	text-align: left;
 	font-family: serif;
-	width: 275px;
-	padding: 10px;
-	margin: 0 auto;
-	Background: #CEAE9C;
-	position: relative; 
-    top: 0; 
-    left: 0;
+	padding: 15px;
+	background: #CEAE9C;
 }
 
 #footer {

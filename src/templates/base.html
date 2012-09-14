@@ -8,11 +8,11 @@
 	<body bgcolor="#FFFAE6">
 		<div id="banner">
 			<div id="banner-content">
-				Testing - {% if user %}Logout{% else %}Login{% endif %}
+				 {% if user %}{{ user.email() }} - <a href='{{ logout }}'>Logout</a>{% else %}<a href='{{ login }}'>Login</a>{% endif %}
 			</div>
 		</div>
 		<div id="main">
-			<h1>{{ title }}</h1>
+			<div id="title"><h1>{{ title }}</h1></div>
 			<div id="pinbox">
 				{% block body %}
     			{% endblock %}
@@ -25,4 +25,3 @@
 		</div>
 	</body>
 </html>
-
