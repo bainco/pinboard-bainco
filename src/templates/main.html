@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block body %}
+	<div class="displaybox">
+		{% if user %}
+  			 Enter new pin:<br>
+   		 	<form method="post" action="/pin">
+     			Image URL:<input type="text" name="imgUrl"/><br>
+      			Caption:<input type="text" name="caption"/><br>     
+ 	 	 		<input type="submit" value="Submit">
+    		</form>
+    	{% else %}
+    		You must login first.
+    	{% endif %}
+    </div>
+{% endblock %}

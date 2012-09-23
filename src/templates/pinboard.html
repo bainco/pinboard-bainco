@@ -1,20 +1,12 @@
 {% extends "base.html" %}
 {% block body %}
-	{% if user %}
-	{% if imgUrl %}
-		You just entered:
-		<ul>			
- 			<li>imageUrl = {{ imgUrl }}</li>
-  			<li>caption = {{ caption }}</li>
-		</ul>
-	{% endif %}
-   Enter new pin:<br>
-    <form method="get">
-      Image URL:<input type="text" name="imgUrl"/><br>
-      Caption:<input type="text" name="caption"/><br>     
- 	  <input type="submit" value="Submit">
-    </form>
-    {% else %}
-    You must login first.
-    {% endif %}
+	{% for pin in pins %}
+	<div class="displaybox">
+   		<div style="text-align:center;"><a href="/pin/{{ pin.key().id() }}"><img style="max-height:100px;" src="{{ pin.imgUrl }}"/></a></div>
+   		<p>Pinned on {{ pin.date.date() }}</p>
+   		<p>{{ pin.caption }}</p>
+   </div>
+   <br>
+	{% endfor %}
+	<p style="font-size:large;"><a href="/">Add a new pin</a></p>
 {% endblock %}

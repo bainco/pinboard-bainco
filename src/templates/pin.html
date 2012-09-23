@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block body %}
+	<div class="displaybox">
+	<img style="max-width:750px;" src="{{ pin.imgUrl }}"/>
+	<br>
+    <p>{{ pin.caption }}</p>
+    <p>Pinned on {{ pin.date.date() }}</p>
+    
+    </div>
+    <br>
+	<div class="displaybox">
+   <form method="post" action="{{ pinUrl }}">
+      Image URL:<input type="text" name="imgUrl" value="{{ pin.imgUrl }}"/><br>
+      Caption:<input type="text" name="caption" value="{{ pin.caption }}"/><br>     
+ 	  <input type="submit" value="Update"> 	
+ 	 
+   </form>
+    	 <br>
+   
+   <form method="post" action="{{ pinUrl }}/d">
+ 	  <input type="submit" value="Delete"/>
+ 	  </form>
+   </div>
+{% endblock %}

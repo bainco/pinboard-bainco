@@ -1,12 +1,12 @@
 application: pinboard-bainco
-version: 3
+version: 4
 runtime: python27
 api_version: 1
 threadsafe: true
 
 handlers:
 - url: /css
-  static_dir: templates/css/
+  static_dir: css/
 
 - url: /.*
   script: main.app
