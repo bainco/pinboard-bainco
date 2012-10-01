@@ -71,7 +71,7 @@ class BoardHandler(MainPage):
         if not theBoard:
             self.redirect('/')
             return
-        query = Pin.all()
+        query = Pin.all().filter("owner =", theBoard.owner)
         
         allPins = []
         boardPins = []           
@@ -81,7 +81,6 @@ class BoardHandler(MainPage):
                 boardPins.append(pin)
             else:
                 allPins.append(pin)
-
         self.template_values['boardPins'] = boardPins
         self.template_values['allPins'] = allPins
         self.template_values['board'] = theBoard
