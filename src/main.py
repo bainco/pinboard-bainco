@@ -1,8 +1,9 @@
 #Author: Connor P. Bain
-#HW 4
-#Added Datastore functionality
-#Last modified September 23, 2012
+#HW 5
+#Added Boards functionality
+#Last modified September 30, 2012
 
+import logging
 import webapp2
 import jinja2
 import os
@@ -13,83 +14,201 @@ jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__) + "/templates"))
 
 class MainPage(webapp2.RequestHandler):        
-    def get(self):
-        self.setupUser();             
-        self.template_values['title'] = "Pinboard"
-        self.render("main.html")    
-        
     def setupUser(self): 
         self.template_values = {}
         self.currentUser = users.get_current_user()  
         self.template_values['user'] = self.currentUser
         if self.currentUser:
-            self.template_values['login'] = ('<a href="/pin">My Pins</a> - <b>%s</b> - <a href="%s">Logout</a>' 
-                                             % (self.currentUser.nickname(), users.create_logout_url("/")))
+            self.template_values['login'] = users.create_logout_url("/")
         else:
-            self.template_values['login'] = ('<a href="%s">Login</a>' % (users.create_login_url(self.request.uri)))
-
+            self.template_values['login'] = users.create_login_url(self.request.uri)
+        
     def render(self, loadTemplate):
         template = jinja_environment.get_template(loadTemplate)   
         self.response.out.write(template.render(self.template_values))  
+    
+    def get(self):
+        self.setupUser();             
+        self.template_values['title'] = "Pinboard"
+        self.render("main.html")    
+        
+    def getPin(self, pinID):
+        key = db.Key.from_path('Pin', long(pinID))
+        thePin = db.get(key)
+        if thePin == None:
+            self.redirect('/')
+            return None
+        if thePin.owner != self.currentUser: #not his pin, kick him out.
+            self.redirect('/')
+            return None
+        return thePin   
+    
+    def getBoard(self, boardID):
+        key = db.Key.from_path('Board', long(boardID))
+        theBoard = db.get(key)
+        if theBoard == None:
+            self.redirect('/')
+            return None
+        if theBoard.private == True:
+            if theBoard.owner != self.currentUser: #not his pin, kick him out.
+                return None
+        return theBoard   
         
 class BoardHandler(MainPage):        
-    def get(self):
-        self.setupUser()
-        if not self.currentUser:
-            self.redirect("/")
-            return    
-        self.template_values['title'] = 'Your Pins'
-        self.template_values['pins'] = Pin.all().filter("owner =", self.currentUser.nickname())
-        self.render("pinboard.html")
-    
-    def post(self):  
-        self.setupUser()
-        inImgUrl = self.request.get('imgUrl')
-        inCaption = self.request.get('caption')
-        newPin = Pin(imgUrl=inImgUrl, caption=inCaption, owner=self.currentUser.nickname()) 
-        newPin.put()  
-        self.redirect("/pin/" + str(newPin.key().id()))
+    def get(self, boardID):
+        self.setupUser()  
+        if boardID == '': # GET /pin returns the list of pins
+            if not self.currentUser:
+                self.redirect('/')
+                return
+            query = Board.all().filter('owner =', self.currentUser) #Remember: "owner=" won't work!!!
+            self.template_values['boards'] = query
+            self.template_values['title'] = 'Your Boards'
+            self.render('boardlist.html')
+            return  
         
-class PinHandler(MainPage):
-    def get(self): 
-        self.setupUser()
-        if not self.currentUser:
-            self.redirect("/")
-            return    
+        theBoard = self.getBoard(boardID)
+        if not theBoard:
+            self.redirect('/')
+            return
+        query = Pin.all()
         
-        splitUrl = self.request.path.split('/')
-        pinID = splitUrl[2]
-        if pinID == "":
-            self.redirect("/pin")
+        allPins = []
+        boardPins = []           
+        
+        for pin in query:
+            if theBoard.key() in pin.boards:
+                boardPins.append(pin)
+            else:
+                allPins.append(pin)
+
+        self.template_values['boardPins'] = boardPins
+        self.template_values['allPins'] = allPins
+        self.template_values['board'] = theBoard
+        self.template_values['title'] = theBoard.title
+        
+        self.render('board.html')
+                        
+    def post(self, boardID):
+        self.setupUser()        
+        title = self.request.get('title')
+        if self.request.get('private') == "on":
+            private = True
+        else:
+            private = False
+            
+        aPin = self.request.get('aPin')
+        rPin = self.request.get('rPin')
+        command = self.request.get('cmd')
+        
+        if not self.currentUser:
+            self.redirect('/')
+            return
+        if boardID == '': #new pin, create it
+            newBoard = Board(title = title, private = private, owner = self.currentUser)
+            newBoard.put()   
+  
+        elif command == 'delete': #delete the pin
+            newBoard = self.getBoard(boardID)
+            newBoard.deleteBoard()
+            self.redirect('/board/')            
             return
         
-        self.template_values['title'] =  "Pin " + pinID
-        self.template_values['pin'] = Pin.get_by_id(int(pinID))
-        self.template_values['pinUrl'] = "/pin/" + pinID
-        
-        self.render("pin.html")            
-        
-    def post(self):
+        else: #existing pin, update it
+            newBoard = self.getBoard(boardID)
+            newBoard.title = title
+            newBoard.private = private
+            
+            if aPin != "--":
+                temp = self.getPin(aPin)
+                temp.boards.append(newBoard.key())
+                temp.put()
+                
+            if rPin != "--":
+                temp = self.getPin(rPin)
+                temp.boards.remove(newBoard.key())
+                temp.put()
+                        
+            newBoard.put()
+        newUrl = '/board/%s' % newBoard.id()
+        self.redirect(newUrl)
+    
+class PinHandler(MainPage):
+    def get(self, pinID): 
         self.setupUser()
-        splitUrl = self.request.path.split('/')
-        pinID = splitUrl[2]
-        newPin = Pin.get_by_id(int(pinID)) 
+        if not self.currentUser:
+            self.redirect("/")
+            return    
+        if pinID == '': # GET /pin returns the list of pins
+            query = Pin.all().filter('owner =', self.currentUser) #Remember: "owner=" won't work!!!
+            self.template_values['pins'] = query
+            self.template_values['title'] = 'Your Pins'
+            self.render('pinlist.html')
+            return
+        thePin = self.getPin(pinID)
         
-        if len(splitUrl) > 3:
-            if splitUrl[3] == "d":
-                newPin.delete()
-                self.redirect("/pin")
-                return
-        else:    
-            newPin.imgUrl = self.request.get('imgUrl')
-            newPin.caption = self.request.get('caption')
+        boards = []
+        for key in thePin.boards:
+            boards.append(db.get(key))
+        
+        self.template_values['pin'] = thePin
+        self.template_values['boards'] = boards
+        self.template_values['title'] = 'Pin %s' % pinID
+        self.render('pin.html')
+                        
+    def post(self, pinID):
+        self.setupUser()
+        if not self.currentUser:
+            self.redirect('/')
+            return     
+        imgUrl = self.request.get('imgUrl')
+        caption = self.request.get('caption')
+        command = self.request.get('cmd')
+        
+        if pinID == '': #new pin, create it
+            newPin = Pin(imgUrl = imgUrl, caption = caption, boards = [], owner = self.currentUser)
             newPin.put()
-            self.redirect("/pin/" + pinID)  
-        
+        elif command == 'delete': #delete the pin
+            newPin = self.getPin(pinID)
+            newPin.delete()
+            self.redirect('/pin/')            
+            return
+        else: #existing pin, update it 
+            newPin = self.getPin(pinID)
+            newPin.imgUrl = imgUrl
+            newPin.caption = caption
+            newPin.put()
+            
+        newUrl = '/pin/%s' % newPin.id()
+        self.redirect(newUrl)
+            
 class Pin(db.Model):
     imgUrl = db.StringProperty()
     caption = db.StringProperty(multiline=True)
     date = db.DateTimeProperty(auto_now_add=True)
-    owner = db.StringProperty()
-   
-app = webapp2.WSGIApplication([('/pin/.*', PinHandler), ('/pin.*', BoardHandler), ('/.*', MainPage)], debug=True)
+    owner = db.UserProperty()
+    boards = db.ListProperty(db.Key)
+    
+    def id(self):
+        return self.key().id()
+    
+class Board(db.Model):
+    title = db.StringProperty()
+    private = db.BooleanProperty()
+    owner = db.UserProperty()
+    
+    def id(self):
+        return self.key().id()
+    
+    def deleteBoard(self):
+        query = Pin.all()
+        for pin in query:
+            if self.key() in pin.boards:
+                pin.boards.remove(self.key())
+                pin.put()
+        self.delete()
+        return
+    
+app = webapp2.WSGIApplication([('/board/(.*)', BoardHandler), ('/board()', BoardHandler),
+                               ('/pin/(.*)', PinHandler), ('/pin()', PinHandler), 
+                               ('/.*', MainPage)], debug=True)

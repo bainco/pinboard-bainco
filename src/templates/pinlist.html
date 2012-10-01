@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block body %}
+	<div class="displaybox">
+		Enter new pin:<br>
+		<form method="post" action="/pin/">
+     		Image URL:<input type="text" name="imgUrl"/><br>
+      		Caption:<input type="text" name="caption"/><br>     
+ 	 		<input type="submit" value="Submit">
+  	 	</form>
+  	</div>
+  	<br>
+	{% for pin in pins %}
+	<div class="displaybox">
+   		<div style="text-align:center;"><a href="/pin/{{ pin.id() }}"><img style="max-height:100px;" src="{{ pin.imgUrl }}"/></a></div>
+   		<p>Pinned on {{ pin.date.date() }}</p>
+   		<p>{{ pin.caption }}</p>
+   </div>
+   <br>
+	{% endfor %}
+{% endblock %}

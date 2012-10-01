@@ -1,24 +1,28 @@
 {% extends "base.html" %}
 {% block body %}
 	<div class="displaybox">
-	<img style="max-width:750px;" src="{{ pin.imgUrl }}"/>
+	<img style="max-width:750px;" alt="{{ pin.caption }}" src="{{ pin.imgUrl }}"/>
 	<br>
     <p>{{ pin.caption }}</p>
-    <p>Pinned on {{ pin.date.date() }}</p>
-    
-    </div>
-    <br>
-	<div class="displaybox">
-   <form method="post" action="{{ pinUrl }}">
+	<p>Pinned on {{ pin.date.date() }}</p>
+</div>
+<br>
+<div class="displaybox">
+    {% for board in boards %}
+        <p>In <a href="/board/{{ board.id() }}">{{ board.title }}</a> board.</p>
+    {% endfor %}
+</div>
+<br>
+<div class="displaybox">
+	<form method="post" action="/pin/{{ pin.id() }}">
       Image URL:<input type="text" name="imgUrl" value="{{ pin.imgUrl }}"/><br>
       Caption:<input type="text" name="caption" value="{{ pin.caption }}"/><br>     
  	  <input type="submit" value="Update"> 	
- 	 
-   </form>
-    	 <br>
-   
-   <form method="post" action="{{ pinUrl }}/d">
- 	  <input type="submit" value="Delete"/>
- 	  </form>
-   </div>
+	</form>
+	<br>
+	<form method="post" action="/pin/{{ pin.id() }}">
+		<input type="hidden" name="cmd" value="delete"/>
+		<input type="submit" value="Delete this Pin" />
+	</form> 
+</div>
 {% endblock %}
