@@ -1,6 +1,6 @@
 #Author: Connor P. Bain
-#HW 5
-#Added Boards functionality
+#HW 7
+#Added XHR request handling
 #Last modified September 30, 2012
 
 import logging
@@ -36,9 +36,6 @@ class MainPage(webapp2.RequestHandler):
         key = db.Key.from_path('Pin', long(pinID))
         thePin = db.get(key)
         if thePin == None:
-            self.redirect('/')
-            return None
-        if thePin.owner != self.currentUser: #not his pin, kick him out.
             self.redirect('/')
             return None
         return thePin   
@@ -134,22 +131,29 @@ class BoardHandler(MainPage):
     
 class PinHandler(MainPage):
     def get(self, pinID): 
-        self.setupUser()
-        if not self.currentUser:
-            self.redirect("/")
-            return    
-        if pinID == '': # GET /pin returns the list of pins
+        self.setupUser() 
+        if pinID == '' and self.currentUser: # GET /pin returns the list of pins
             query = Pin.all().filter('owner =', self.currentUser) #Remember: "owner=" won't work!!!
             self.template_values['pins'] = query
             self.template_values['title'] = 'Your Pins'
             self.render('pinlist.html')
             return
+        
         thePin = self.getPin(pinID)
+    
+        if thePin.private and (self.currentUser != thePin.owner):
+            self.redirect("/")
+            return
         
         boards = []
         for key in thePin.boards:
             boards.append(db.get(key))
         
+        if self.currentUser == thePin.owner:
+            self.template_values['editor'] = True
+        else:
+            self.template_values['editor'] = False
+                 
         self.template_values['pin'] = thePin
         self.template_values['boards'] = boards
         self.template_values['title'] = 'Pin %s' % pinID
@@ -160,33 +164,47 @@ class PinHandler(MainPage):
         if not self.currentUser:
             self.redirect('/')
             return     
+        
         imgUrl = self.request.get('imgUrl')
         caption = self.request.get('caption')
         command = self.request.get('cmd')
-        
+      
         if pinID == '': #new pin, create it
-            newPin = Pin(imgUrl = imgUrl, caption = caption, boards = [], owner = self.currentUser)
+            if self.request.get('privOpt') == "on":
+                private = True
+            else:
+                private = False
+            newPin = Pin(imgUrl = imgUrl, caption = caption, private = private, owner = self.currentUser)
             newPin.put()
+            newUrl = '/pin/%s' % newPin.id()
+            self.redirect(newUrl)
+            return
         elif command == 'delete': #delete the pin
             newPin = self.getPin(pinID)
             newPin.delete()
             self.redirect('/pin/')            
             return
         else: #existing pin, update it 
+            private = self.request.get('privOpt')
             newPin = self.getPin(pinID)
-            newPin.imgUrl = imgUrl
-            newPin.caption = caption
-            newPin.put()
-            
-        newUrl = '/pin/%s' % newPin.id()
-        self.redirect(newUrl)
+            if caption:
+                newPin.caption = caption
+            if private:
+                if private == "true":
+                    private = True 
+                else:
+                    private = False
+                newPin.private = private
+            newPin.put()       
+
             
 class Pin(db.Model):
-    imgUrl = db.StringProperty()
-    caption = db.StringProperty(multiline=True)
+    imgUrl = db.StringProperty(required=True)
+    caption = db.StringProperty(indexed=False)
     date = db.DateTimeProperty(auto_now_add=True)
-    owner = db.UserProperty()
-    boards = db.ListProperty(db.Key)
+    owner = db.UserProperty(required=True)
+    private = db.BooleanProperty(default=False)
+    boards = db.ListProperty(db.Key,default=[]) #references to the pins in this pinboard
     
     def id(self):
         return self.key().id()
