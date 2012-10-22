@@ -47,10 +47,11 @@ for (var i = 0; i < imgTags.length; i++) {
             var form = document.createElement("form");
             form.method='post';
             //NOTE: For right now I manually switch the action for appspot
-            //form.action='http://localhost:8080/pin/';
-            form.action='http://pinboard-bainco.appspot.com/pin/'
+            form.action='http://localhost:8080/pin/';
+            //form.action='http://pinboard-bainco.appspot.com/pin/'
             form.innerHTML = "<input type='hidden' name='imgUrl' value='" + image.src + "'>" +
             	"Caption:<input type='text' name='caption'/><br>" +
+            	"Private:<input type='checkbox' name='privOpt'>" +
      	 		"<input type='submit' value='Submit'>";
 
             cell.appendChild(form);

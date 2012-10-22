@@ -1,11 +1,12 @@
 #Author: Connor P. Bain
-#HW 7
+#HW 8
 #Added XHR request handling
 #Last modified September 30, 2012
 
 import logging
 import webapp2
 import jinja2
+import json
 import os
 from google.appengine.api import users
 from google.appengine.ext import db
@@ -22,6 +23,15 @@ class MainPage(webapp2.RequestHandler):
             self.template_values['login'] = users.create_logout_url("/")
         else:
             self.template_values['login'] = users.create_login_url(self.request.uri)
+   
+    def setupJSON(self, objID):
+        self.json = False
+        if (self.request.get('fmt') == 'json'):
+            self.json = True
+        if ('json' in self.request.path.split('.')):
+            objID = objID.split('.')[0]
+            self.json = True  
+        return objID
         
     def render(self, loadTemplate):
         template = jinja_environment.get_template(loadTemplate)   
@@ -53,11 +63,10 @@ class MainPage(webapp2.RequestHandler):
         
 class BoardHandler(MainPage):        
     def get(self, boardID):
-        self.setupUser()  
-        if boardID == '': # GET /pin returns the list of pins
-            if not self.currentUser:
-                self.redirect('/')
-                return
+        self.setupUser()          
+        boardID = self.setupJSON(boardID)  
+
+        if boardID == '' and self.currentUser: # GET /pin returns the list of pins
             query = Board.all().filter('owner =', self.currentUser) #Remember: "owner=" won't work!!!
             self.template_values['boards'] = query
             self.template_values['title'] = 'Your Boards'
@@ -65,9 +74,6 @@ class BoardHandler(MainPage):
             return  
         
         theBoard = self.getBoard(boardID)
-        if not theBoard:
-            self.redirect('/')
-            return
         query = Pin.all().filter("owner =", theBoard.owner)
         
         allPins = []
@@ -78,6 +84,12 @@ class BoardHandler(MainPage):
                 boardPins.append(pin)
             else:
                 allPins.append(pin)
+                
+        if self.json:
+            if self.json:#self.json:
+                self.response.out.headers['Content-Type'] = "text/json"
+                self.response.out.write(theBoard.json(boardPins))
+            return
         self.template_values['boardPins'] = boardPins
         self.template_values['allPins'] = allPins
         self.template_values['board'] = theBoard
@@ -86,25 +98,28 @@ class BoardHandler(MainPage):
         self.render('board.html')
                         
     def post(self, boardID):
-        self.setupUser()        
+        self.setupUser()
+    
         title = self.request.get('title')
-        if self.request.get('private') == "on":
-            private = True
-        else:
-            private = False
-            
-        aPin = self.request.get('aPin')
-        rPin = self.request.get('rPin')
+        private = self.request.get('privOpt')
         command = self.request.get('cmd')
         
         if not self.currentUser:
             self.redirect('/')
             return
+        
         if boardID == '': #new pin, create it
+            if private == "on":
+                private = True
+            else:
+                private = False
             newBoard = Board(title = title, private = private, owner = self.currentUser)
             newBoard.put()   
+            newUrl = '/board/%s' % newBoard.id()
+            self.redirect(newUrl)
   
         elif command == 'delete': #delete the pin
+            logging.info(boardID)
             newBoard = self.getBoard(boardID)
             newBoard.deleteBoard()
             self.redirect('/board/')            
@@ -112,40 +127,46 @@ class BoardHandler(MainPage):
         
         else: #existing pin, update it
             newBoard = self.getBoard(boardID)
-            newBoard.title = title
-            newBoard.private = private
-            
-            if aPin != "--":
-                temp = self.getPin(aPin)
-                temp.boards.append(newBoard.key())
-                temp.put()
-                
-            if rPin != "--":
-                temp = self.getPin(rPin)
-                temp.boards.remove(newBoard.key())
-                temp.put()
-                        
+            if private:
+                if private == "true":
+                    private = True 
+                else:
+                    private = False
+                newBoard.private = private            
             newBoard.put()
-        newUrl = '/board/%s' % newBoard.id()
-        self.redirect(newUrl)
     
 class PinHandler(MainPage):
     def get(self, pinID): 
-        self.setupUser() 
-        if pinID == '' and self.currentUser: # GET /pin returns the list of pins
-            query = Pin.all().filter('owner =', self.currentUser) #Remember: "owner=" won't work!!!
+        self.setupUser()
+
+        pinID = self.setupJSON(pinID)  
+        
+        if pinID == '' and self.currentUser: # GET /pin returns the list of pins       
+            query = Pin.all().filter('owner =', self.currentUser)
+            if self.json:
+                self.response.out.headers['Content-Type'] = "text/json"
+                pins = []
+                for pin in query:
+                    pins.append(pin.dict())
+                self.response.out.write(json.dumps(pins))
+                return               
             self.template_values['pins'] = query
             self.template_values['title'] = 'Your Pins'
             self.render('pinlist.html')
             return
         
-        thePin = self.getPin(pinID)
+        thePin = self.getPin(pinID)  
+        boards = []
     
         if thePin.private and (self.currentUser != thePin.owner):
             self.redirect("/")
             return
         
-        boards = []
+        if self.json:#self.json:
+            self.response.out.headers['Content-Type'] = "text/json"
+            self.response.out.write(json.dumps(thePin.dict()))
+            return
+        
         for key in thePin.boards:
             boards.append(db.get(key))
         
@@ -158,6 +179,7 @@ class PinHandler(MainPage):
         self.template_values['boards'] = boards
         self.template_values['title'] = 'Pin %s' % pinID
         self.render('pin.html')
+        return
                         
     def post(self, pinID):
         self.setupUser()
@@ -204,10 +226,18 @@ class Pin(db.Model):
     date = db.DateTimeProperty(auto_now_add=True)
     owner = db.UserProperty(required=True)
     private = db.BooleanProperty(default=False)
-    boards = db.ListProperty(db.Key,default=[]) #references to the pins in this pinboard
+    boards = db.ListProperty(db.Key,default=[])
     
     def id(self):
         return self.key().id()
+    
+    def dict(self):
+        thePinDict = {}
+        thePinDict['id'] = self.id()
+        thePinDict['private'] = self.private
+        thePinDict['imgUrl'] = self.imgUrl
+        thePinDict['caption'] = self.caption
+        return thePinDict
     
 class Board(db.Model):
     title = db.StringProperty()
@@ -216,6 +246,17 @@ class Board(db.Model):
     
     def id(self):
         return self.key().id()
+    
+    def json(self, boardPins):
+        theBoardJSON = {}
+        theBoardJSON['id'] = self.id()
+        theBoardJSON['private'] = self.private
+        theBoardJSON['title'] = self.title
+        pinList = []
+        for pin in boardPins:
+            pinList.append(pin.dict())
+        theBoardJSON['pins'] = pinList
+        return json.dumps(theBoardJSON)
     
     def deleteBoard(self):
         query = Pin.all()

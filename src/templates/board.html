@@ -1,41 +1,18 @@
 {% extends "base.html" %}
+{% block header %}
+    {% if user == board.owner %}
+        <script type="text/javascript" src="/js/boardscript.js"></script>
+    {% endif %}
+{% endblock %}
 {% block body %}
-	{% for pin in boardPins %}
-		<div class="displaybox">
-   			<div style="text-align:center;"><a href="/pin/{{ pin.id() }}"><img style="max-height:100px;" src="{{ pin.imgUrl }}"/></a></div>
-   			<p>Pin {{ pin.id() }}</p>
-   			<p>{{ pin.caption }}</p>
-		</div>
-		<br>
-	{% endfor %}
-    <br>
     {% if user == board.owner %}
 	<div class="displaybox">
-		<p>Edit this board:</p>
-		<form method="post" action="/board/{{ board.id() }}">
-			Title:<input type="text" name="title" value="{{ board.title }}"/><br>
-			Private:<input type="checkbox" name="private" {% if board.private == True %} checked {% endif %}/><br> 
-			Add Pin:
-				<select name="aPin">
-					<option value="--">--</option>
- 					{% for pin in allPins %}
- 					      <option value='{{ pin.id() }}'>{{ pin.id() }}</option>
- 					{% endfor %}
-				</select><br>
-			Remove Pin:
-				<select name="rPin">
-                    <option value="--">--</option>
-                    {% for pin in boardPins %}
-                    <option value='{{ pin.id() }}'>{{ pin.id() }}</option>
-                    {% endfor %}
-                </select> 
-			<input type="submit" value="Update">
-		</form>
-		<br>
+	    Private: <input id="private" type="checkbox" {% if board.private %}checked{% endif %}>
 		<form method="post" action="/board/{{ board.id() }}">
 			<input type="hidden" name="cmd" value="delete"/>
 			<input type="submit" value="Delete this Board" />
 		</form> 
+		<input type="hidden" id="boardID" value="{{ board.id() }}">
 	</div>
    {% endif %}
 {% endblock %}

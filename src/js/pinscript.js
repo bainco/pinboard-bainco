@@ -4,6 +4,7 @@ $(document).ready(function() {
 	$('.editable').on("click", handleEditClick);	
 	$('.editable').hover(hoverOver, hoverOut);
 	$('#private').on("click", handleCheckClick);
+	$('#test').on("click", handleTestClick);
 });
 
 function hoverOver(e) {
@@ -16,8 +17,27 @@ function hoverOut(e) {
 	$(this).removeClass("hover");
 }
 
+function handleTestClick(e) {
+	var pinID = document.getElementById("pinID").value;
+	$.ajax('/pin', {
+		type: 'GET',
+		data: {
+			fmt: 'json'
+		},
+		success: function(pins){		
+			for(i = 0; i < pins.length; i++) {
+				pin = pins[i];
+				console.log("Pin Id:" + pin.id)
+			}
+			console.log('Update posted.');
+		},
+		error: function() {
+			console.log('Error at server:');
+		}
+	});
+}
+
 function handleCheckClick(e) {
-	
 	var pinID = document.getElementById("pinID").value;
 	$.ajax('/pin/' + pinID, {
 		type: 'POST',
@@ -42,6 +62,7 @@ function handleSubmit(e) {
 		noEdit.innerText = this.value;
 		$(noEdit).addClass("editable");
 		$(this).replaceWith(noEdit); 
+		
 		$('.editable').on("click", handleEditClick);	
 		$('.editable').hover(hoverOver, hoverOut);
 		
