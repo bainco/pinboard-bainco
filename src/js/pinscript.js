@@ -4,7 +4,6 @@ $(document).ready(function() {
 	$('.editable').on("click", handleEditClick);	
 	$('.editable').hover(hoverOver, hoverOut);
 	$('#private').on("click", handleCheckClick);
-	$('#test').on("click", handleTestClick);
 });
 
 function hoverOver(e) {
@@ -49,6 +48,11 @@ function handleCheckClick(e) {
 		},
 		error: function() {
 			console.log('Error at server:');
+			if ($('#private').prop("checked") == true) {
+				$('#private').prop('checked', false);
+			}
+			else $('#private').prop('checked', true);
+			alert("There was an error at the server, changes reverted!")
 		}
 	});
 }

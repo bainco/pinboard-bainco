@@ -1,6 +1,6 @@
 #Author: Connor P. Bain
 #HW 8
-#Added XHR request handling
+#Added JSON model::view controller
 #Last modified September 30, 2012
 
 import logging
@@ -41,7 +41,7 @@ class MainPage(webapp2.RequestHandler):
         self.setupUser();             
         self.template_values['title'] = "Pinboard"
         self.render("main.html")    
-        
+       
     def getPin(self, pinID):
         key = db.Key.from_path('Pin', long(pinID))
         thePin = db.get(key)
@@ -49,16 +49,14 @@ class MainPage(webapp2.RequestHandler):
             self.redirect('/')
             return None
         return thePin   
-    
+        
     def getBoard(self, boardID):
         key = db.Key.from_path('Board', long(boardID))
         theBoard = db.get(key)
         if theBoard == None:
-            self.redirect('/')
             return None
-        if theBoard.private == True:
-            if theBoard.owner != self.currentUser: #not his pin, kick him out.
-                return None
+        if theBoard.private == True and theBoard.owner != self.currentUser:
+            return None
         return theBoard   
         
 class BoardHandler(MainPage):        
@@ -74,35 +72,44 @@ class BoardHandler(MainPage):
             return  
         
         theBoard = self.getBoard(boardID)
-        query = Pin.all().filter("owner =", theBoard.owner)
+
+        if not theBoard:
+            self.redirect("/")
+            return
+        
+        if theBoard.owner == self.currentUser:
+            self.template_values['editor'] = True;
+        else:
+            self.template_values['editor'] = False;
         
         allPins = []
         boardPins = []           
         
+        query = Pin.all().filter("owner =", theBoard.owner)
         for pin in query:
             if theBoard.key() in pin.boards:
                 boardPins.append(pin)
             else:
                 allPins.append(pin)
                 
-        if self.json:
-            if self.json:#self.json:
+        if self.json:#self.json:
                 self.response.out.headers['Content-Type'] = "text/json"
                 self.response.out.write(theBoard.json(boardPins))
-            return
+                return
+        
         self.template_values['boardPins'] = boardPins
-        self.template_values['allPins'] = allPins
         self.template_values['board'] = theBoard
         self.template_values['title'] = theBoard.title
-        
         self.render('board.html')
                         
     def post(self, boardID):
         self.setupUser()
-    
+        
         title = self.request.get('title')
         private = self.request.get('privOpt')
         command = self.request.get('cmd')
+        rPin = self.request.get('rPin')
+        aPin = self.request.get('aPin')
         
         if not self.currentUser:
             self.redirect('/')
@@ -125,16 +132,29 @@ class BoardHandler(MainPage):
             self.redirect('/board/')            
             return
         
-        else: #existing pin, update it
+        else:
             newBoard = self.getBoard(boardID)
             if private:
+                logging.info("Updating private")
                 if private == "true":
                     private = True 
                 else:
                     private = False
-                newBoard.private = private            
+                newBoard.private = private 
+            if title:
+                newBoard.title = title
+                
             newBoard.put()
-    
+                
+            if aPin:
+                temp = self.getPin(aPin)
+                temp.boards.append(newBoard.key())
+                temp.put()
+            if rPin:
+                temp = self.getPin(rPin)
+                temp.boards.remove(newBoard.key())
+                temp.put()           
+                        
 class PinHandler(MainPage):
     def get(self, pinID): 
         self.setupUser()
