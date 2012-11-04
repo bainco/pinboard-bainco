@@ -168,10 +168,12 @@ function checkAJAX() {
 
 function handlePinAdd(e){
 	console.log("Adding pin.")
-
+	console.log("The board before:");
+	console.log(theBoard);
 	var pinID = this.getAttribute("pinid");
 	addPin(pinID);
-
+	console.log("The board after:");
+	console.log(theBoard);
 	updateView();
 	$.ajax('/board/' + boardID, {
 		type: 'POST',

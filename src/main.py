@@ -59,6 +59,30 @@ class MainPage(webapp2.RequestHandler):
             return None
         return theBoard   
         
+class CanvasHandler(MainPage):        
+    def get(self, boardID):
+        self.setupUser()          
+        boardID = self.setupJSON(boardID)  
+
+        if boardID == '' and self.currentUser: # GET /pin returns the list of pins
+            self.redirect("/board")
+            return  
+        
+        theBoard = self.getBoard(boardID)
+
+        if not theBoard:
+            self.redirect("/")
+            return
+        
+        if theBoard.owner == self.currentUser:
+            self.template_values['editor'] = True
+        else:
+            self.template_values['editor'] = False
+
+        self.template_values['board'] = theBoard
+        self.template_values['title'] = theBoard.title
+        self.render('canvas.html') 
+        
 class BoardHandler(MainPage):        
     def get(self, boardID):
         self.setupUser()          
@@ -246,7 +270,7 @@ class Pin(db.Model):
     date = db.DateTimeProperty(auto_now_add=True)
     owner = db.UserProperty(required=True)
     private = db.BooleanProperty(default=False)
-    boards = db.ListProperty(db.Key,default=[])
+    boards = db.ListProperty(db.Key, default=[])
     
     def id(self):
         return self.key().id()
@@ -287,6 +311,7 @@ class Board(db.Model):
         self.delete()
         return
     
-app = webapp2.WSGIApplication([('/board/(.*)', BoardHandler), ('/board()', BoardHandler),
+app = webapp2.WSGIApplication([('/canvas/(.*)', CanvasHandler),
+                               ('/board/(.*)', BoardHandler), ('/board()', BoardHandler),
                                ('/pin/(.*)', PinHandler), ('/pin()', PinHandler), 
                                ('/.*', MainPage)], debug=True)
