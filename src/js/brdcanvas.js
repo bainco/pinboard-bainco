@@ -1,3 +1,8 @@
+/*
+ * Eventually this should probably re-update the model-view from server.
+ * 
+ */
+
 var PIN_WIDTH = 200;
 var PIN_HEIGHT = 200;
 var CANVAS_HEIGHT = 480;
@@ -44,12 +49,30 @@ function setupCanvas() {
 	theCanvas.addEventListener('mouseup', handleMouseUp)
 
 	var loopPin;
-	for (var i = 0; i < theBoard.pins.length; i++) {
 
-		theBoard.pins[i].x = (i * 200)
-		theBoard.pins[i].y = 0;
-		loopPin = theBoard.pins[i];
-		drawPin(loopPin);
+	if (theBoard.xValues.length == 0) {
+		for (var i = 0; i < theBoard.pins.length; i++) {
+
+			theBoard.pins[i].x = ((i * 200) + "")
+			theBoard.pins[i].y = "0";
+
+			loopPin = theBoard.pins[i];
+
+			theBoard.xValues[i] = loopPin.x;
+			theBoard.yValues[i] = loopPin.y;
+			drawPin(loopPin);
+		} 
+	}
+
+	else {
+		for (var i = 0; i < theBoard.pins.length; i++) {
+
+			theBoard.pins[i].x = theBoard.xValues[i];
+			theBoard.pins[i].y = theBoard.yValues[i];
+
+			loopPin = theBoard.pins[i];
+			drawPin(loopPin);
+		} 
 	}
 }
 
@@ -57,7 +80,7 @@ function drawPin(thePin) {
 
 	var img = new Image();
 	img.onload = function(){
-		ctx.drawImage(img, thePin.x, thePin.y, PIN_WIDTH, PIN_HEIGHT);
+		ctx.drawImage(img, eval(thePin.x), eval(thePin.y), PIN_WIDTH, PIN_HEIGHT);
 	};
 	img.src = thePin.imgUrl;
 	img.setAttribute("pinid", thePin.id);
@@ -71,6 +94,7 @@ function handleMouseDown(event) {
 	console.log("Mouse down.");
 	if (validClick(event.offsetX, event.offsetY) == true) {
 		theCanvas.addEventListener('mousemove', handleDrag);
+
 	}
 }
 
@@ -96,11 +120,42 @@ function validClick(mouseX, mouseY) {
 	}
 	return false;
 }
+
 function handleMouseUp(event) {
 	console.log("Mouse released.");
-	//STUB: send to server
+
+	if (dragPin != null) {}
+	for (var i = 0; i < theBoard.pins.length; i++) {
+
+		if (dragPin.getAttribute("pinid") == theBoard.pins[i].id) {
+
+			theBoard.xValues[i] = dragPin.getAttribute('x');
+			theBoard.yValues[i] = dragPin.getAttribute('y');
+
+			updateDatastore();
+		}
+	}
+
 	dragPin = null;
 	theCanvas.removeEventListener('mousemove', handleDrag);
+}
+
+
+function updateDatastore() {
+
+	$.ajax('/board/' + boardID, {
+		type: 'POST',
+		data: {
+			updateX: JSON.stringify(theBoard.xValues),
+			updateY: JSON.stringify(theBoard.yValues)
+		},
+		success: function() {
+			console.log("Updated board datastore.")
+		},
+		error: function() {
+			console.log('Error at server:');
+		},
+	});
 }
 
 function handleDrag(event) {
@@ -111,7 +166,7 @@ function handleDrag(event) {
 	for (var i = 0; i < thePinImages.length; i++) {
 		if (dragPin.getAttribute("pinid") == thePinImages[i].getAttribute("pinid")) {
 			thePinImages[i].setAttribute('x', event.offsetX);
-			thePinImages[i].setAttribute('y', event.offsetY);;
+			thePinImages[i].setAttribute('y', event.offsetY);
 		}
 	}
 	updateCanvas();

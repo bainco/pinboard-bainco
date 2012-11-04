@@ -1,7 +1,7 @@
 #Author: Connor P. Bain
-#HW 8
-#Added JSON model::view controller
-#Last modified September 30, 2012
+#HW 9
+#Added canvas board
+#Last modified November 4, 2012
 
 import logging
 import webapp2
@@ -61,7 +61,7 @@ class MainPage(webapp2.RequestHandler):
         
 class CanvasHandler(MainPage):        
     def get(self, boardID):
-        self.setupUser()          
+        self.setupUser()      
         boardID = self.setupJSON(boardID)  
 
         if boardID == '' and self.currentUser: # GET /pin returns the list of pins
@@ -129,11 +129,15 @@ class BoardHandler(MainPage):
     def post(self, boardID):
         self.setupUser()
         
+        
         title = self.request.get('title')
         private = self.request.get('privOpt')
         command = self.request.get('cmd')
         rPin = self.request.get('rPin')
         aPin = self.request.get('aPin')
+        updateX = self.request.get('updateX')
+        updateY = self.request.get('updateY')
+        logging.info(updateX)
         
         if not self.currentUser:
             self.redirect('/')
@@ -168,6 +172,10 @@ class BoardHandler(MainPage):
             if title:
                 newBoard.title = title
                 
+            if updateX:
+                newBoard.xValues = json.loads(updateX)
+                newBoard.yValues = json.loads(updateY)
+                
             newBoard.put()
                 
             if aPin:
@@ -177,7 +185,8 @@ class BoardHandler(MainPage):
             if rPin:
                 temp = self.getPin(rPin)
                 temp.boards.remove(newBoard.key())
-                temp.put()           
+                temp.put()    
+                   
                         
 class PinHandler(MainPage):
     def get(self, pinID): 
@@ -287,6 +296,8 @@ class Board(db.Model):
     title = db.StringProperty()
     private = db.BooleanProperty()
     owner = db.UserProperty()
+    xValues = db.StringListProperty(default=[])
+    yValues = db.StringListProperty(default=[])
     
     def id(self):
         return self.key().id()
@@ -296,6 +307,8 @@ class Board(db.Model):
         theBoardJSON['id'] = self.id()
         theBoardJSON['private'] = self.private
         theBoardJSON['title'] = self.title
+        theBoardJSON['xValues'] = self.xValues
+        theBoardJSON['yValues'] = self.yValues
         pinList = []
         for pin in boardPins:
             pinList.append(pin.dict())
