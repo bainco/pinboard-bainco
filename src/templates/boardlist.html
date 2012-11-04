@@ -12,7 +12,7 @@
   	<div class="displaybox">
   	<ul>
 		{% for board in boards %}
-			<li><a href="/board/{{ board.id() }}">{{ board.title }}</a></li>
+			<li><a href="/board/{{ board.id() }}">{{ board.title }}</a> (<a href="/canvas/{{ board.id() }}">canvas</a>)</li>
 		{% endfor %}
 	</ul>
 	</div>
