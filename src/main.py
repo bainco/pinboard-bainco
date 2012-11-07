@@ -5,11 +5,15 @@
 
 import logging
 import webapp2
+import urllib2
 import jinja2
 import json
 import os
+
+from google.appengine.api import urlfetch
 from google.appengine.api import users
 from google.appengine.ext import db
+from google.appengine.api import images
 
 jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__) + "/templates"))
@@ -243,15 +247,26 @@ class PinHandler(MainPage):
         imgUrl = self.request.get('imgUrl')
         caption = self.request.get('caption')
         command = self.request.get('cmd')
+        image = db.Blob()
       
         if pinID == '': #new pin, create it
             if self.request.get('privOpt') == "on":
                 private = True
             else:
                 private = False
-            newPin = Pin(imgUrl = imgUrl, caption = caption, private = private, owner = self.currentUser)
+            image = urlfetch.fetch(imgUrl)
+            if image.status_code == 200:
+                pinImage = db.Blob(image.content)
+                image = images.Image(pinImage)
+                width = image.width
+                height = image.height
+            else:
+                self.response.out.write("There was a problem loading the image.")
+            newPin = Pin(imgUrl = imgUrl, image = pinImage, width = width, height = height, caption = caption, private = private, owner = self.currentUser)
             newPin.put()
             newUrl = '/pin/%s' % newPin.id()
+            newPin.imgUrl = '/pin/%s.jpg' % newPin.id()
+            newPin.put()
             self.redirect(newUrl)
             return
         elif command == 'delete': #delete the pin
@@ -272,14 +287,27 @@ class PinHandler(MainPage):
                 newPin.private = private
             newPin.put()       
 
+class ImageHandler(MainPage):
+    def get(self, pinID):
+        logging.info("HELLOW!")
+        pinID = pinID.split('.')[0]
+        thePin = self.getPin(pinID)
+        if thePin:
+            self.response.headers['Content-Type'] = 'image/jpeg'
+            self.response.out.write(thePin.image)
+        else:
+            self.response.out.write("There was an error.")
             
 class Pin(db.Model):
     imgUrl = db.StringProperty(required=True)
+    image = db.BlobProperty(default=None)
     caption = db.StringProperty(indexed=False)
     date = db.DateTimeProperty(auto_now_add=True)
     owner = db.UserProperty(required=True)
     private = db.BooleanProperty(default=False)
     boards = db.ListProperty(db.Key, default=[])
+    width = db.IntegerProperty()
+    height = db.IntegerProperty()
     
     def id(self):
         return self.key().id()
@@ -326,5 +354,5 @@ class Board(db.Model):
     
 app = webapp2.WSGIApplication([('/canvas/(.*)', CanvasHandler),
                                ('/board/(.*)', BoardHandler), ('/board()', BoardHandler),
-                               ('/pin/(.*)', PinHandler), ('/pin()', PinHandler), 
+                               ('/pin/(.*).jpg', ImageHandler), ('/pin/(.*)', PinHandler), ('/pin()', PinHandler),
                                ('/.*', MainPage)], debug=True)
