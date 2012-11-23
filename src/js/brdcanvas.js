@@ -108,7 +108,7 @@ function validClick(mouseX, mouseY) {
 		if ((mouseX < ((loadCoord.x + 200))) && (mouseX > loadCoord.x)) {
 			if ((mouseY > loadCoord.y) && (mouseY < (loadCoord.y + 200))) {
 				console.log("Valid click");
-				
+
 				dragOffset = new Vector(mouseX, mouseY);
 				dragOffset = dragOffset.subtract(loadCoord);
 				dragPin = loopPin;
@@ -122,15 +122,15 @@ function validClick(mouseX, mouseY) {
 function handleDrag(event) {
 
 	console.log("Dragging!");
-	
+
 	var mouseCoord = new Vector(event.offsetX, event.offsetY);
 	var imageCoord = new Vector(0, 0);
-		
+
 	ctx.clearRect(0,0, CANVAS_WIDTH, CANVAS_HEIGHT);
 	var loopImage;
 	for (var i = 0; i < thePinImages.length; i++) {
 		if (dragPin.getAttribute("pinid") == thePinImages[i].getAttribute("pinid")) {
-			
+
 			imageCoord = mouseCoord.subtract(dragOffset);
 			thePinImages[i].setAttribute('x', imageCoord.x);
 			thePinImages[i].setAttribute('y', imageCoord.y);
@@ -142,20 +142,21 @@ function handleDrag(event) {
 function handleMouseUp(event) {
 	console.log("Mouse released.");
 
-	if (dragPin != null) {}
-	for (var i = 0; i < theBoard.pins.length; i++) {
+	if (dragPin != null) {
+		for (var i = 0; i < theBoard.pins.length; i++) {
 
-		if (dragPin.getAttribute("pinid") == theBoard.pins[i].id) {
+			if (dragPin.getAttribute("pinid") == theBoard.pins[i].id) {
 
-			theBoard.xValues[i] = dragPin.getAttribute('x');
-			theBoard.yValues[i] = dragPin.getAttribute('y');
+				theBoard.xValues[i] = dragPin.getAttribute('x');
+				theBoard.yValues[i] = dragPin.getAttribute('y');
 
-			updateDatastore();
+				updateDatastore();
+			}
 		}
-	}
 
-	dragPin = null;
-	theCanvas.removeEventListener('mousemove', handleDrag);
+		dragPin = null;
+		theCanvas.removeEventListener('mousemove', handleDrag);
+	}
 }
 
 function updateCanvas() {
