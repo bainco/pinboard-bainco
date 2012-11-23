@@ -8,6 +8,7 @@ var ctx;
 var boardID;
 var theBoard;
 var dragPin;
+var selectedCorners = new Array();
 var thePinImages = new Array();
 
 $(document).ready(function() {
@@ -75,7 +76,7 @@ function drawPin(thePin) {
 
 	var img = new Image();
 	img.onload = function(){
-		ctx.drawImage(img, eval(thePin.x), eval(thePin.y), PIN_WIDTH, PIN_HEIGHT);
+		ctx.drawImage(img, eval(thePin.x), eval(thePin.y), thePin.width, thePin.height);
 	};
 	img.src = thePin.imgUrl;
 	img.setAttribute("pinid", thePin.id);
@@ -87,14 +88,25 @@ function drawPin(thePin) {
 function handleMouseDown(event) {
 
 	console.log("Mouse down.");
+	if (dragPin != null) {
+		var click = new Vector(event.offsetX, event.offsetY);
+		checkResizeCorners(click)
+	}
+	dragPin = null;
 	if (validClick(event.offsetX, event.offsetY) == true) {
 		theCanvas.addEventListener('mousemove', handleDrag);
+	}
+}
 
+function checkResizeCorners(mouseClick) {
+	
+	for(var i = 0; i < selectedCorners.length; i++) {
+		
+		
 	}
 }
 
 var dragOffset;
-
 function validClick(mouseX, mouseY) {
 
 	var loopPin;
@@ -105,18 +117,34 @@ function validClick(mouseX, mouseY) {
 		loopPin = thePinImages[i];
 		loadCoord = new Vector(eval(thePinImages[i].getAttribute('x')),eval(thePinImages[i].getAttribute('y')));
 
-		if ((mouseX < ((loadCoord.x + 200))) && (mouseX > loadCoord.x)) {
-			if ((mouseY > loadCoord.y) && (mouseY < (loadCoord.y + 200))) {
+		if ((mouseX < ((loadCoord.x + loopPin.width))) && (mouseX > loadCoord.x)) {
+			if ((mouseY > loadCoord.y) && (mouseY < (loadCoord.y + loopPin.height))) {
 				console.log("Valid click");
 
 				dragOffset = new Vector(mouseX, mouseY);
 				dragOffset = dragOffset.subtract(loadCoord);
 				dragPin = loopPin;
+				setupResize();
 				return true;
 			}
 		}
 	}
 	return false;
+}
+
+// Where the image is  0******1
+//					   2******3
+function setupResize() {
+	
+	var topLeft = new Vector(eval(dragPin.getAttribute('x')), eval(dragPin.getAttribute('y')));
+	var topRight = topLeft.add(new Vector(dragPin.width, 0));
+	var bottomLeft = topLeft.add(new Vector(0, dragPin.height));
+	var bottomRight = topLeft.add(new Vector(dragPin.width, dragPin.height));
+	
+	selectedCorners[0] = topLeft;
+	selectedCorners[1] = topRight;
+	selectedCorners[2] = bottomLeft;
+	selectedCorners[3] = bottomRight;
 }
 
 function handleDrag(event) {
@@ -126,7 +154,6 @@ function handleDrag(event) {
 	var mouseCoord = new Vector(event.offsetX, event.offsetY);
 	var imageCoord = new Vector(0, 0);
 
-	ctx.clearRect(0,0, CANVAS_WIDTH, CANVAS_HEIGHT);
 	var loopImage;
 	for (var i = 0; i < thePinImages.length; i++) {
 		if (dragPin.getAttribute("pinid") == thePinImages[i].getAttribute("pinid")) {
@@ -134,6 +161,7 @@ function handleDrag(event) {
 			imageCoord = mouseCoord.subtract(dragOffset);
 			thePinImages[i].setAttribute('x', imageCoord.x);
 			thePinImages[i].setAttribute('y', imageCoord.y);
+			dragPin = thePinImages[i];
 		}
 	}
 	updateCanvas();
@@ -153,22 +181,30 @@ function handleMouseUp(event) {
 				updateDatastore();
 			}
 		}
-
-		dragPin = null;
 		theCanvas.removeEventListener('mousemove', handleDrag);
 	}
 }
 
 function updateCanvas() {
-
+	ctx.clearRect(0,0, CANVAS_WIDTH, CANVAS_HEIGHT);
+	
 	var loopImage;
 	for (var i = 0; i < thePinImages.length; i++) {
-
 		loopImage = thePinImages[i];
-		ctx.drawImage(loopImage, loopImage.getAttribute('x'), loopImage.getAttribute('y'), PIN_WIDTH, PIN_HEIGHT);
+		ctx.drawImage(loopImage, loopImage.getAttribute('x'), loopImage.getAttribute('y'), loopImage.width, loopImage.height);
+		setupResize();
+		drawSelectors();
 	}
 }
 
+function drawSelectors() {
+	for (var i = 0; i < selectedCorners.length; i++) {
+		ctx.beginPath();
+		ctx.arc(selectedCorners[i].x, selectedCorners[i].y, 10, 0, 2 * Math.PI, false);
+		ctx.fillStyle = 'grey';
+		ctx.fill();
+	}
+}
 
 function updateDatastore() {
 

@@ -318,6 +318,8 @@ class Pin(db.Model):
         thePinDict['private'] = self.private
         thePinDict['imgUrl'] = self.imgUrl
         thePinDict['caption'] = self.caption
+        thePinDict['width'] = self.width
+        thePinDict['height'] = self.height
         return thePinDict
     
 class Board(db.Model):
