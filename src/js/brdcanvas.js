@@ -1,8 +1,3 @@
-/*
- * Eventually this should probably re-update the model-view from server.
- * 
- */
-
 var PIN_WIDTH = 200;
 var PIN_HEIGHT = 200;
 var CANVAS_HEIGHT = 480;
@@ -98,27 +93,50 @@ function handleMouseDown(event) {
 	}
 }
 
+var dragOffset;
+
 function validClick(mouseX, mouseY) {
 
 	var loopPin;
-	var loadX;
-	var loadY;
+	var loadCoord;
 
 	for (var i = 0; i < thePinImages.length; i++) {
 
 		loopPin = thePinImages[i];
-		loadX = eval(thePinImages[i].getAttribute('x'));
-		loadY = eval(thePinImages[i].getAttribute('y'));
+		loadCoord = new Vector(eval(thePinImages[i].getAttribute('x')),eval(thePinImages[i].getAttribute('y')));
 
-		if ((mouseX < ((loadX + 200))) && (mouseX > loadX)) {
-			if ((mouseY > loadY) && (mouseY < (loadY + 200))) {
+		if ((mouseX < ((loadCoord.x + 200))) && (mouseX > loadCoord.x)) {
+			if ((mouseY > loadCoord.y) && (mouseY < (loadCoord.y + 200))) {
 				console.log("Valid click");
+				
+				dragOffset = new Vector(mouseX, mouseY);
+				dragOffset = dragOffset.subtract(loadCoord);
 				dragPin = loopPin;
 				return true;
 			}
 		}
 	}
 	return false;
+}
+
+function handleDrag(event) {
+
+	console.log("Dragging!");
+	
+	var mouseCoord = new Vector(event.offsetX, event.offsetY);
+	var imageCoord = new Vector(0, 0);
+		
+	ctx.clearRect(0,0, CANVAS_WIDTH, CANVAS_HEIGHT);
+	var loopImage;
+	for (var i = 0; i < thePinImages.length; i++) {
+		if (dragPin.getAttribute("pinid") == thePinImages[i].getAttribute("pinid")) {
+			
+			imageCoord = mouseCoord.subtract(dragOffset);
+			thePinImages[i].setAttribute('x', imageCoord.x);
+			thePinImages[i].setAttribute('y', imageCoord.y);
+		}
+	}
+	updateCanvas();
 }
 
 function handleMouseUp(event) {
@@ -140,6 +158,16 @@ function handleMouseUp(event) {
 	theCanvas.removeEventListener('mousemove', handleDrag);
 }
 
+function updateCanvas() {
+
+	var loopImage;
+	for (var i = 0; i < thePinImages.length; i++) {
+
+		loopImage = thePinImages[i];
+		ctx.drawImage(loopImage, loopImage.getAttribute('x'), loopImage.getAttribute('y'), PIN_WIDTH, PIN_HEIGHT);
+	}
+}
+
 
 function updateDatastore() {
 
@@ -156,28 +184,4 @@ function updateDatastore() {
 			console.log('Error at server:');
 		},
 	});
-}
-
-function handleDrag(event) {
-
-	console.log("Dragging!");
-	ctx.clearRect(0,0, CANVAS_WIDTH, CANVAS_HEIGHT);
-	var loopImage;
-	for (var i = 0; i < thePinImages.length; i++) {
-		if (dragPin.getAttribute("pinid") == thePinImages[i].getAttribute("pinid")) {
-			thePinImages[i].setAttribute('x', event.offsetX);
-			thePinImages[i].setAttribute('y', event.offsetY);
-		}
-	}
-	updateCanvas();
-}
-
-function updateCanvas() {
-
-	var loopImage;
-	for (var i = 0; i < thePinImages.length; i++) {
-
-		loopImage = thePinImages[i];
-		ctx.drawImage(loopImage, loopImage.getAttribute('x'), loopImage.getAttribute('y'), PIN_WIDTH, PIN_HEIGHT);
-	}
 }
