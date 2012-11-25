@@ -1,11 +1,10 @@
 #Author: Connor P. Bain
 #HW 11
 #Added canvas board
-#Last modified November 4, 2012
+#Last modified November 26, 2012
 
 import logging
 import webapp2
-import urllib2
 import jinja2
 import json
 import os
@@ -141,6 +140,8 @@ class BoardHandler(MainPage):
         aPin = self.request.get('aPin')
         updateX = self.request.get('updateX')
         updateY = self.request.get('updateY')
+        newWidths = self.request.get('updateWidth')
+        newHeights = self.request.get('updateHeight')
         logging.info(updateX)
         
         if not self.currentUser:
@@ -179,6 +180,10 @@ class BoardHandler(MainPage):
             if updateX:
                 newBoard.xValues = json.loads(updateX)
                 newBoard.yValues = json.loads(updateY)
+            
+            if newWidths:
+                newBoard.widths = json.loads(newWidths)
+                newBoard.heights = json.loads(newHeights)
                 
             newBoard.put()
                 
@@ -328,6 +333,8 @@ class Board(db.Model):
     owner = db.UserProperty()
     xValues = db.StringListProperty(default=[])
     yValues = db.StringListProperty(default=[])
+    widths = db.ListProperty(int, default=[])
+    heights = db.ListProperty(int, default=[])
     
     def id(self):
         return self.key().id()
@@ -339,9 +346,14 @@ class Board(db.Model):
         theBoardJSON['title'] = self.title
         theBoardJSON['xValues'] = self.xValues
         theBoardJSON['yValues'] = self.yValues
+        
         pinList = []
         for pin in boardPins:
             pinList.append(pin.dict())
+            self.widths.append(pin.width)
+            self.heights.append(pin.height)
+        theBoardJSON['widths'] = self.widths
+        theBoardJSON['heights'] = self.heights
         theBoardJSON['pins'] = pinList
         return json.dumps(theBoardJSON)
     

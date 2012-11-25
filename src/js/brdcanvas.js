@@ -67,6 +67,8 @@ function setupCanvas() {
 
 			theBoard.pins[i].x = theBoard.xValues[i];
 			theBoard.pins[i].y = theBoard.yValues[i];
+			theBoard.pins[i].width = theBoard.widths[i];
+			theBoard.pins[i].height = theBoard.heights[i];
 
 			loopPin = theBoard.pins[i];
 			drawPin(loopPin);
@@ -84,6 +86,8 @@ function drawPin(thePin) {
 	img.setAttribute("pinid", thePin.id);
 	img.setAttribute("x", thePin.x);
 	img.setAttribute("y", thePin.y);
+	img.width = thePin.width;
+	img.height = thePin.height;
 	thePinImages.push(img);
 }
 
@@ -258,6 +262,9 @@ function handleMouseUp(event) {
 
 				theBoard.xValues[i] = dragPin.getAttribute('x');
 				theBoard.yValues[i] = dragPin.getAttribute('y');
+				
+				theBoard.widths[i] = dragPin.width;
+				theBoard.heights[i] = dragPin.height;
 			}
 		}
 		theCanvas.removeEventListener('mousemove', handleDrag);
@@ -296,7 +303,9 @@ function updateDatastore() {
 		type: 'POST',
 		data: {
 			updateX: JSON.stringify(theBoard.xValues),
-			updateY: JSON.stringify(theBoard.yValues)
+			updateY: JSON.stringify(theBoard.yValues),
+			updateWidth: JSON.stringify(theBoard.widths),
+			updateHeight: JSON.stringify(theBoard.heights)
 		},
 		success: function() {
 			console.log("Updated board datastore.")
