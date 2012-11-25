@@ -201,7 +201,7 @@ function validClick(mouseX, mouseY) {
 				dragOffset = new Vector(mouseX, mouseY);
 				dragOffset = dragOffset.subtract(loadCoord);
 				dragPin = loopPin;
-				setupResize();
+				updateCanvas();
 				return true;
 			}
 		}
