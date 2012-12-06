@@ -76,6 +76,11 @@ li {
 	background-color: #fff;
 }
 
+#canvas { 
+	background:url(corkboard.png); 
+	}
+
+
 #footer {
 	width: 100%;
 	margin-top: -2em;

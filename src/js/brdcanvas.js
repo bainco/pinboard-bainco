@@ -94,20 +94,16 @@ function drawPin(thePin) {
 function handleMouseDown(event) {
 
 	console.log("Mouse down.");
-	if (dragPin != null && selectedCorners != null) {
 		var click = new Vector(event.offsetX, event.offsetY);
 		if (checkResizeCorners(click) == true) {
+			if (dragPin != null) {
 			console.log("Resize click");
 			theCanvas.addEventListener('mousemove', resizeDrag);
+			}
 		}
 		else if (validClick(event.offsetX, event.offsetY) == true) {
 			theCanvas.addEventListener('mousemove', handleDrag);
 		}
-	}
-
-	else if (validClick(event.offsetX, event.offsetY) == true) {
-		theCanvas.addEventListener('mousemove', handleDrag);
-	}
 }
 
 function checkResizeCorners(mouseClick) {
@@ -206,7 +202,6 @@ function validClick(mouseX, mouseY) {
 			}
 		}
 	}
-	selectedCorners = null;
 	dragPin = null;
 	updateCanvas();
 	return false;
@@ -235,7 +230,6 @@ function setupResize() {
 function handleDrag(event) {
 
 	console.log("Dragging!");
-
 	var mouseCoord = new Vector(event.offsetX, event.offsetY);
 	var imageCoord = new Vector(0, 0);
 
@@ -253,8 +247,8 @@ function handleDrag(event) {
 }
 
 function handleMouseUp(event) {
+	
 	console.log("Mouse released.");
-
 	if (dragPin != null) {
 		for (var i = 0; i < theBoard.pins.length; i++) {
 
