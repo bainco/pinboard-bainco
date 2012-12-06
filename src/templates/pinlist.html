@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% block header %}
+<script type="text/javascript" src="/js/pinDnD.js"></script>
+{% endblock %}
 {% block body %}
 	<div class="displaybox">
 		Enter new pin:<br>
@@ -9,6 +12,18 @@
  	 		<input type="submit" value="Submit">
   	 	</form>
   	</div>
+  	<br>
+  	<div class="displaybox">
+        <form method="post" action="/pin/">
+        <div id="imageArea" align="center"> 
+       <div id="drop_zone">Or drag image here!</div>
+       </div>
+            <input type="file" style="display:none" id="fileUp" name="file"/>
+            Caption:<input type="text" name="caption"/><br>    
+            Private:<input type="checkbox" name="privOpt"/><br>   
+            <input type="submit" value="Submit">
+        </form>
+    </div>
   	<br>
 	{% for pin in pins %}
 	<div class="displaybox">

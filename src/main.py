@@ -249,6 +249,8 @@ class PinHandler(MainPage):
             self.redirect('/')
             return     
         
+        theFile = self.request.get('file')
+        logging.info(theFile)
         imgUrl = self.request.get('imgUrl')
         caption = self.request.get('caption')
         command = self.request.get('cmd')
@@ -259,14 +261,23 @@ class PinHandler(MainPage):
                 private = True
             else:
                 private = False
-            image = urlfetch.fetch(imgUrl)
-            if image.status_code == 200:
-                pinImage = db.Blob(image.content)
+            
+            if theFile:
+                pinImage = db.Blob(theFile)
                 image = images.Image(pinImage)
-                width = image.width
-                height = image.height
+                width = 200
+                height = 200        
             else:
-                self.response.out.write("There was a problem loading the image.")
+                image = urlfetch.fetch(imgUrl)
+            
+                if image.status_code == 200:
+                    pinImage = db.Blob(image.content)
+                    image = images.Image(pinImage)
+                    width = image.width
+                    height = image.height
+                else:
+                    self.response.out.write("There was a problem loading the image.")
+                    
             newPin = Pin(imgUrl = imgUrl, image = pinImage, width = width, height = height, caption = caption, private = private, owner = self.currentUser)
             newPin.put()
             newUrl = '/pin/%s' % newPin.id()
@@ -294,7 +305,6 @@ class PinHandler(MainPage):
 
 class ImageHandler(MainPage):
     def get(self, pinID):
-        logging.info("HELLOW!")
         pinID = pinID.split('.')[0]
         thePin = self.getPin(pinID)
         if thePin:
