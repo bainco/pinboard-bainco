@@ -13,6 +13,7 @@ from google.appengine.api import urlfetch
 from google.appengine.api import users
 from google.appengine.ext import db
 from google.appengine.api import images
+from google.appengine.ext import blobstore
 
 jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__) + "/templates"))
@@ -249,12 +250,11 @@ class PinHandler(MainPage):
             self.redirect('/')
             return     
         
-        theFile = self.request.get('file')
-        logging.info(theFile)
+        theFile = self.request.POST[u'upFile'].file
+        image = db.Blob(theFile.getvalue())
         imgUrl = self.request.get('imgUrl')
-        caption = self.request.get('caption')
+        upCaption = self.request.get('caption')
         command = self.request.get('cmd')
-        image = db.Blob()
       
         if pinID == '': #new pin, create it
             if self.request.get('privOpt') == "on":
@@ -262,14 +262,15 @@ class PinHandler(MainPage):
             else:
                 private = False
             
+            logging.info("hello")
             if theFile:
-                pinImage = db.Blob(theFile)
-                image = images.Image(pinImage)
-                width = 200
-                height = 200        
+                pinImage = db.Blob(image)    
+                image = images.Image(image)
+                upCaption = "Insert caption here."
+                width = image.width
+                height = image.height
             else:
                 image = urlfetch.fetch(imgUrl)
-            
                 if image.status_code == 200:
                     pinImage = db.Blob(image.content)
                     image = images.Image(pinImage)
@@ -278,12 +279,12 @@ class PinHandler(MainPage):
                 else:
                     self.response.out.write("There was a problem loading the image.")
                     
-            newPin = Pin(imgUrl = imgUrl, image = pinImage, width = width, height = height, caption = caption, private = private, owner = self.currentUser)
+            newPin = Pin(imgUrl = imgUrl, image = pinImage, width = width, height = height, caption = upCaption, private = private, owner = self.currentUser)
             newPin.put()
             newUrl = '/pin/%s' % newPin.id()
             newPin.imgUrl = '/pin/%s.jpg' % newPin.id()
             newPin.put()
-            self.redirect(newUrl)
+            self.redirect('/')
             return
         elif command == 'delete': #delete the pin
             newPin = self.getPin(pinID)
@@ -293,8 +294,8 @@ class PinHandler(MainPage):
         else: #existing pin, update it 
             private = self.request.get('privOpt')
             newPin = self.getPin(pinID)
-            if caption:
-                newPin.caption = caption
+            if upCaption:
+                newPin.caption = upCaption
             if private:
                 if private == "true":
                     private = True 
@@ -314,7 +315,7 @@ class ImageHandler(MainPage):
             self.response.out.write("There was an error.")
             
 class Pin(db.Model):
-    imgUrl = db.StringProperty(required=True)
+    imgUrl = db.StringProperty()
     image = db.BlobProperty(default=None)
     caption = db.StringProperty(indexed=False)
     date = db.DateTimeProperty(auto_now_add=True)

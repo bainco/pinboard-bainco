@@ -11,15 +11,29 @@ function handleFileSelect(evt) {
 
 	var reader = new FileReader();
 	reader.readAsDataURL(theFile);
-	
+
 	reader.onload = function () {
-		var img = new Image();
+		/*var img = new Image();
 		img.style.maxWidth = "200px";
 		img.style.maxHeight = "200px";
 		img.file = theFile;
 		img.src = this.result;
 		document.getElementById("imageArea").innerHTML = "";
-		document.getElementById("imageArea").appendChild(img);
+		document.getElementById("imageArea").appendChild(img);*/
+		
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/pin/');
+        xhr.onload = function() {
+        	location.reload();
+        };
+        xhr.onerror = function() {
+           console.log("Oh no!");
+        };
+
+        // prepare FormData
+        var formData = new FormData();
+        formData.append('upFile', theFile);
+        xhr.send(formData);
 	}
 }
 
