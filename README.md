@@ -9,6 +9,9 @@ CSCE 242, Fall 2012
 
 Note: The stuff below is just from a nice template that I found...
 
+## Features
+I added the capability to drag and drop an image from the user's computer (or from the web) to create a pin!
+
 ## Code Example
 
 Show what the library does as concisely as possible, developers should be able to figure out **how** your project solves their problem by looking at the code example. Make sure the API you are showing off is obvious, and that your code is short and concise.
